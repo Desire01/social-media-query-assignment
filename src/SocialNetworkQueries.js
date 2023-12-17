@@ -26,12 +26,12 @@ export class SocialNetworkQueries {
           const uniqueFriendsLikes = new Set(friend.likes.filter((like) => !userLikesSet.has(like)));
           //Iterate over the unique books
           uniqueFriendsLikes.forEach((friendLike) => {
-            
+
             //update the potentiallikesmap with the ocunt of each unique
             potentialLikesMap.set(
               friendLike, (potentialLikesMap.get(friendLike) || 0) + 1
             );
-          }); 
+          });
         }
       });
 
@@ -39,17 +39,56 @@ export class SocialNetworkQueries {
       const totalFriends = userData.friends.length;
 
       const potentialLikes = Array.from(potentialLikesMap.entries())
+        .filter(([title, count]) => count / totalFriends >= minimalScore)
+        .sort((a, b) => {
+          //sorting the potential likes by count in descending order
+          if (b[1] !== a[1]) {
+            return b[1] - a[1];
+          }
+          //sort alphabetically if the counts are the same
+          return a[0].localCompare(b[0], "en", { sensitivity: "base" });
+        })
+        .map(([title]) => title);
+      return potentialLikes;
+    } catch (error) {
+      if (this.lastKnownUserData) {
+        return this.findPotentialLikesFromData(this.lastKnownUserData, minimalScore);
+      }
+    }
+    return [];
+  }
+
+
+  findPotentialLikesFromData(userData, minimalScore) {
+    if (!userData || !userData.friends || !userData.likes) {
+      return [];
+    }
+
+    const userLikesSet = new Set(userData.likes);
+    const potentialLikesMap = new Map();
+
+    userData.friends.forEach((friend) => {
+      if (friend.likes && friend.likes.length > 0) {
+        const uniqueFriendsLikes = new Set(friend.likes.filter((like) => !userLikesSet.has(like)));
+
+        uniqueFriendsLikes.forEach((friendLike) => {
+          potentialLikesMap.set(friendLike, (potentialLikesMap.get(friendLike) || 0) + 1
+          );
+        });
+      }
+    });
+
+    const totalFriends = userData.friends.length;
+    const potentialLikes = Array.from(potentialLikemap.entries())
       .filter(([title, count]) => count / totalFriends >= minimalScore)
       .sort((a, b) => {
-        //sorting the potential likes by count in descending order
         if (b[1] !== a[1]) {
           return b[1] - a[1];
         }
-        //sort alphabetically if the counts are the same
-        return a[0].localCompare(b[0], "en", { sensitivity: "base"});
+        return a[0].localCompare(b[0], "en", { sensitivity: "base" });
       })
       .map(([title]) => title);
-      return potentialLikes;
-    } 
+    return potentialLikes;
+
   }
 }
