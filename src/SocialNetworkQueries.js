@@ -51,14 +51,16 @@ export class SocialNetworkQueries {
         .map(([title]) => title);
       return potentialLikes;
     } catch (error) {
+      //use the last known data if fetching current user fails
       if (this.lastKnownUserData) {
         return this.findPotentialLikesFromData(this.lastKnownUserData, minimalScore);
       }
     }
+    //returns and empty array if the fetchCurrentUser function fails and there is no previous data stored.
     return [];
   }
 
-
+  //Function to find potential likes from given user data
   findPotentialLikesFromData(userData, minimalScore) {
     if (!userData || !userData.friends || !userData.likes) {
       return [];
@@ -79,13 +81,13 @@ export class SocialNetworkQueries {
     });
 
     const totalFriends = userData.friends.length;
-    const potentialLikes = Array.from(potentialLikemap.entries())
+    const potentialLikes = Array.from(potentialLikesMap.entries())
       .filter(([title, count]) => count / totalFriends >= minimalScore)
       .sort((a, b) => {
         if (b[1] !== a[1]) {
           return b[1] - a[1];
         }
-        return a[0].localCompare(b[0], "en", { sensitivity: "base" });
+        return a[0].localeCompare(b[0], "en", { sensitivity: "base" });
       })
       .map(([title]) => title);
     return potentialLikes;
